@@ -4,7 +4,7 @@ module Sidekiq
       class Worker
         include Sidekiq::Worker
 
-        def perform(clazz, event, opts, bid, parent_bid)
+        def perform(clazz, event, opts, bid)
           return unless %w(success complete).include?(event)
           clazz, method = clazz.split("#") if (clazz && clazz.class == String && clazz.include?("#"))
           method = "on_#{event}" if method.nil?
