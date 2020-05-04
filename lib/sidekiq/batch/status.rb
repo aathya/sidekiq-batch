@@ -36,7 +36,7 @@ module Sidekiq
       end
 
       def failures
-        failed_jobs.to_i
+        failed_jobs.size
       end
 
       def completed_jobs
@@ -48,7 +48,7 @@ module Sidekiq
       end
 
       def can_queue_callback?
-        pending.zero? && failures.zero? && total == completed_jobs.size? && total == completed_jobs
+        pending.zero? && failures.zero? && total == completed_jobs.size && all_jobs == completed_jobs
       end
 
     end
