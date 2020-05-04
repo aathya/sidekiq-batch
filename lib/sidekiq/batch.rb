@@ -149,7 +149,8 @@ module Sidekiq
 
       def enqueue_callbacks(event, bid)
         batch_status = Status.new(bid)
-        if batch_status.can_queue_callback? && !batch_status.completed?
+        return 'Completed' if batch_status.completed?
+        if batch_status.can_queue_callback?
           start_callback(event, bid)
         end
       end
