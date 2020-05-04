@@ -143,8 +143,7 @@ module Sidekiq
         batch_status = Status.new(bid)
 
         if batch_status.can_queue_callback?
-          enqueue_callbacks(:complete, bid)
-          enqueue_callbacks(:success, bid) if all_success
+          enqueue_callbacks(:success, bid)
         end
       end
 
