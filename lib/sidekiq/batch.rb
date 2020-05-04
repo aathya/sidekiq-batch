@@ -143,14 +143,23 @@ module Sidekiq
         batch_status = Status.new(bid)
 
         if batch_status.can_queue_callback?
-          enqueue_callbacks(:success, bid)
+          start_callback(:success, bid)
         end
       end
 
       def enqueue_callbacks(event, bid)
-        batch_key        = "BID-#{bid}"
-        callback_key     = "#{batch_key}-callbacks-#{event}"
-        status = Status.new(bid)
+        batch_status = Status.new(bid)
+        if batch_status.can_queue_callback? && !batch_status.completed?
+          start_callback(event, bid)
+        end
+      end
+
+      private
+
+      def start_callback(event, bid)
+        batch_key    = "BID-#{bid}"
+        callback_key = "#{batch_key}-callbacks-#{event}"
+        status       = Status.new(bid)
         return if status.completed?
         callbacks, queue = Sidekiq.redis do |r|
           r.multi do
@@ -171,6 +180,14 @@ module Sidekiq
         push_callbacks callback_args, queue
       end
 
+      def push_callbacks args, queue
+        Sidekiq::Client.push_bulk(
+            'class' => Sidekiq::Batch::Callback::Worker,
+            'args'  => args,
+            'queue' => queue
+        ) unless args.empty?
+      end
+
       def cleanup_redis(bid)
         Sidekiq.logger.debug { "Cleaning redis of batch #{bid}" }
         Sidekiq.redis do |r|
@@ -186,16 +203,6 @@ module Sidekiq
               "BID-#{bid}-jids",
           )
         end
-      end
-
-      private
-
-      def push_callbacks args, queue
-        Sidekiq::Client.push_bulk(
-            'class' => Sidekiq::Batch::Callback::Worker,
-            'args'  => args,
-            'queue' => queue
-        ) unless args.empty?
       end
     end
   end
