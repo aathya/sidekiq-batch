@@ -10,3 +10,5 @@
 dump.rdb
 sidekiq-batch-*.gem
 .DS_Store
+/.idea
+/.rakeTasks

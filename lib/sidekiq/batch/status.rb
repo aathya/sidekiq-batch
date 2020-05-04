@@ -15,10 +15,6 @@ module Sidekiq
         Sidekiq.redis { |r| r.hget("BID-#{bid}", 'pending') }.to_i
       end
 
-      def failures
-        Sidekiq.redis { |r| r.scard("BID-#{bid}-failed") }.to_i
-      end
-
       def created_at
         Sidekiq.redis { |r| r.hget("BID-#{bid}", 'created_at') }
       end
@@ -31,31 +27,30 @@ module Sidekiq
         Sidekiq.redis { |r| r.hget("BID-#{bid}", "parent_bid") }
       end
 
-      def failure_info
+      def failed_jobs
         Sidekiq.redis { |r| r.smembers("BID-#{bid}-failed") } || []
       end
 
-      def complete?
-        'true' == Sidekiq.redis { |r| r.hget("BID-#{bid}", 'complete') }
+      def all_jobs
+        Sidekiq.redis { |r| r.smembers("BID-#{bid}-jids") } || []
       end
 
-      def child_count
-        Sidekiq.redis { |r| r.hget("BID-#{bid}", 'children') }.to_i
+      def failures
+        failed_jobs.to_i
       end
 
-      def data
-        {
-          bid: bid,
-          total: total,
-          failures: failures,
-          pending: pending,
-          created_at: created_at,
-          complete: complete?,
-          failure_info: failure_info,
-          parent_bid: parent_bid,
-          child_count: child_count
-        }
+      def completed_jobs
+        Sidekiq.redis { |r| r.smembers("BID-#{bid}-completed") } || []
       end
+
+      def completed?
+        'true' == Sidekiq.redis { |r| r.get("BID-#{bid}-callback_completed") }
+      end
+
+      def can_queue_callback?
+        pending.zero? && failures.zero? && total == completed_jobs.size? && total == completed_jobs
+      end
+
     end
   end
 end
