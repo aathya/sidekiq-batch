@@ -48,7 +48,7 @@ module Sidekiq
       end
 
       def can_queue_callback?
-        pending.zero? && failures.zero? && total == completed_jobs.size && all_jobs == completed_jobs
+        pending.zero? && failures.zero? && total == completed_jobs.size && all_jobs.sort == completed_jobs.sort
       end
 
     end
